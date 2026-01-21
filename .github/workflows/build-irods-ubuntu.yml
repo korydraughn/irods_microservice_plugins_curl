@@ -35,7 +35,7 @@ jobs:
           apt-get update -qq
           apt-get install -qq git
           pwd
-          ls -l . irods irods_client_icommands
+          ls -lA . irods irods_client_icommands
           echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
           echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
 
