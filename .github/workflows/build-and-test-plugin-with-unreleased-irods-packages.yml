@@ -1,4 +1,4 @@
-name: build-and-test-plugin-against-unreleased-irods-2-ubuntu
+name: build-and-test-plugin-with-unreleased-irods-packages-ubuntu
 
 on:
   workflow_call:
@@ -21,6 +21,14 @@ on:
         type: string
       irods_testing_environment_project_db:
         description: The DB component of the project directory to test against. When joined with 'irods_testing_environment_project_os', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. postgres-16).
+        required: true
+        type: string
+      unreleased_irods_build_sha:
+        description: The SHA of the irods/irods build.
+        required: true
+        type: string
+      unreleased_icommands_build_sha:
+        description: The SHA of the irods/irods_client_icommands build.
         required: true
         type: string
 
@@ -57,7 +65,7 @@ jobs:
       - name: Set up iRODS externals package repository
         run: |
           mkdir -p /etc/apt/keyrings
-          wget -qO - https://packages.irods.org/irods-signing-key.asc | \
+          wget -qO - https://unstable.irods.org/irods-unstable-signing-key.asc | \
             gpg \
               --no-options \
               --no-default-keyring \
@@ -65,21 +73,23 @@ jobs:
               --homedir /dev/null \
               --no-keyring \
               --import-options import-export \
-              --output /etc/apt/keyrings/renci-irods-archive-keyring.pgp \
+              --output /etc/apt/keyrings/renci-irods-unstable-archive-keyring.pgp \
               --import
-          echo "deb [signed-by=/etc/apt/keyrings/renci-irods-archive-keyring.pgp arch=amd64] https://packages.irods.org/apt/ $(lsb_release -sc) main" | \
-            tee /etc/apt/sources.list.d/renci-irods.list
+          echo "deb [signed-by=/etc/apt/keyrings/renci-irods-unstable-archive-keyring.pgp arch=amd64] https://unstable.irods.org/apt/ $(lsb_release -sc) main" | \
+            tee /etc/apt/sources.list.d/renci-irods-unstable.list
 
-      - name: Capture SHAs for caching
-        run: |
-          git clone https://github.com/irods/irods
-          echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
+#     - name: Capture SHAs for caching
+#       run: |
+#         git clone https://github.com/irods/irods
+#         echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Check cache for irods/irods packages
+      - name: Check cache for iRODS packages
         uses: actions/cache/restore@v4
         with:
-          key: irods-${{ env.IRODS_SHA }}
+#         key: irods-${{ env.IRODS_SHA }}
+          key: irods-${{ inputs.unreleased_irods_build_sha }}
           path: _build_irods/*.deb
+          fail-on-cache-miss: 'true'
 
       - name: Install iRODS development packages
         run: |
@@ -108,9 +118,8 @@ jobs:
       - name: Upload build output for dependent jobs
         uses: actions/upload-artifact@v6
         with:
-          name: build_output-${{ inputs.build_artifact_suffix }}
+          name: build_output-unreleased-${{ inputs.build_artifact_suffix }}
           path: _build/*.deb
-          retention-days: 1
           overwrite: true
 
   run_tests:
@@ -132,7 +141,7 @@ jobs:
       - name: Download build output
         uses: actions/download-artifact@v7
         with:
-          name: build_output-${{ inputs.build_artifact_suffix }}
+          name: build_output-unreleased-${{ inputs.build_artifact_suffix }}
           path: ${{ inputs.plugin_package_directory }}
 
       - name: Set up docker compose
@@ -149,26 +158,26 @@ jobs:
           pip install docker'<7' requests==2.26.0
           pip freeze
 
-      - name: Capture SHAs for caching
-        run: |
-          git clone https://github.com/irods/irods
-          git clone https://github.com/irods/irods_client_icommands
-          cd irods
-          echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
-          cd ../irods_client_icommands
-          echo "ICMDS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+#     - name: Capture SHAs for caching
+#       run: |
+#         git clone https://github.com/irods/irods
+#         git clone https://github.com/irods/irods_client_icommands
+#         echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
+#         echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Check cache for iRODS packages
         uses: actions/cache/restore@v4
         with:
-          key: irods-${{ env.IRODS_SHA }}
+#         key: irods-${{ env.IRODS_SHA }}
+          key: irods-${{ inputs.unreleased_irods_build_sha }}
           path: _build_irods/*.deb
           fail-on-cache-miss: 'true'
 
       - name: Check cache for iCommands packages
         uses: actions/cache/restore@v4
         with:
-          key: irods-${{ env.IRODS_SHA }}
+#         key: irods-${{ env.IRODS_SHA }}
+          key: irods-${{ inputs.unreleased_icommands_build_sha }}
           path: _build_icommands/*.deb
           fail-on-cache-miss: 'true'
 
@@ -186,4 +195,4 @@ jobs:
             --irods-package-directory ./_build_irods \
             --plugin-package-directory .. \
             --discard-logs \
-            -v
+            -vv

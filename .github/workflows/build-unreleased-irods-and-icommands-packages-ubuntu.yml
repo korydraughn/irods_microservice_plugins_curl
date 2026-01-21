@@ -27,14 +27,14 @@ jobs:
           echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
           echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Check cache for irods/irods packages
+      - name: Check cache for iRODS packages
         id: irods
         uses: actions/cache@v4
         with:
           key: irods-${{ env.IRODS_SHA }}
           path: _build_irods/*.deb
 
-      - name: Check cache for irods/irods_client_icommands package
+      - name: Check cache for iCommands package
         id: icommands
         uses: actions/cache@v4
         with:
@@ -126,3 +126,5 @@ jobs:
       plugin_package_directory: Ubuntu_22
       irods_testing_environment_project_os: ubuntu-22.04
       irods_testing_environment_project_db: postgres-16
+      unreleased_irods_build_sha: ${{ env.IRODS_SHA }}
+      unreleased_icommands_build_sha: ${{ env.IRODS_SHA }}
