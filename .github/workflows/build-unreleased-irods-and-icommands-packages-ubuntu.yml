@@ -36,14 +36,14 @@ jobs:
         id: irods
         uses: actions/cache@v4
         with:
-          key: irods-${{ stesp.sha_info.outputs.irods_sha  }}
+          key: irods-${{ steps.sha_info.outputs.irods_sha  }}
           path: _build_irods/*.deb
 
       - name: Check cache for iCommands package
         id: icommands
         uses: actions/cache@v4
         with:
-          key: icommands-${{ stesp.sha_info.outputs.icommands_sha }}
+          key: icommands-${{ steps.sha_info.outputs.icommands_sha }}
           path: _build_icommands/*.deb
 
       - name: Install prerequisite packages
