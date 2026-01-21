@@ -126,7 +126,7 @@ jobs:
   build_and_test_plugin:
     needs: build_irods_and_icommands
 
-    uses: ./build-and-test-plugin-unreleased.yml@gha_testing_ureleased.m
+    uses: ./build-and-test-plugin-unreleased.yml@gha_testing_unreleased.m
     with:
       docker_image: ${{ matrix.container }}
       build_artifact_suffix: ubuntu_22-main
