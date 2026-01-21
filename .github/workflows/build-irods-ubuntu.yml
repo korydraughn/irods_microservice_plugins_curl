@@ -34,6 +34,8 @@ jobs:
         run: |
           apt-get update -qq
           apt-get install -qq git
+          pwd
+          ls -l
           cd irods
           echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
           cd ../irods_client_icommands
@@ -57,7 +59,7 @@ jobs:
         run: |
           apt-get update -qq
           apt-get install -qq \
-            apt-transport-https
+            apt-transport-https \
             ca-certificates \
             dnsutils
           apt-get install -qq \
