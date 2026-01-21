@@ -111,7 +111,7 @@ jobs:
       - name: Build iCommands packages
         if: steps.icommands.outputs.cache-hit != 'true'
         run:  |
-          apt-get install -qq _build_irods/irods-{dev,runtime}*.deb
+          apt-get install -qq ./_build_irods/irods-{dev,runtime}*.deb
           mkdir _build_icommands
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
           cmake --build _build_icommands --target package
