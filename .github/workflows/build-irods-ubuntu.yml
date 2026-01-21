@@ -35,11 +35,9 @@ jobs:
           apt-get update -qq
           apt-get install -qq git
           pwd
-          ls -l
-          cd irods
-          echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
-          cd ../irods_client_icommands
-          echo "ICMDS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          ls -l . irods irods_client_icommands
+          echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
+          echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Check cache for irods/irods packages
         id: irods
@@ -123,6 +121,7 @@ jobs:
       - name: Build iCommands packages
         if: steps.icommands.outputs.cache-hit != 'true'
         run:  |
+          apt-get install -qq _build_irods/irods-{dev,runtime}*.deb
           mkdir _build_icommands
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
           cmake --build _build_icommands --target package
