@@ -17,28 +17,33 @@ jobs:
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
 
+    outputs:
+      irods_build_sha: ${{ steps.sha_info.outputs.irods_build_sha }}
+      icommands_build_sha: ${{ steps.sha_info.outputs.icommands_sha }}
+
     steps:
       - name: Capture SHAs for caching
+        id: sha_info
         run: |
           apt-get update -qq
           apt-get install -qq git
-          git clone https://github.com/irods/irods
-          git clone https://github.com/irods/irods_client_icommands
-          echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
-          echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
+          git clone -b main --depth 1 --single-branch https://github.com/irods/irods
+          git clone -b main --depth 1 --single-branch https://github.com/irods/irods_client_icommands
+          echo "irods_sha=$(git -C irods rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "icommands_sha=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Check cache for iRODS packages
         id: irods
         uses: actions/cache@v4
         with:
-          key: irods-${{ env.IRODS_SHA }}
+          key: irods-${{ stesp.sha_info.outputs.irods_sha  }}
           path: _build_irods/*.deb
 
       - name: Check cache for iCommands package
         id: icommands
         uses: actions/cache@v4
         with:
-          key: icommands-${{ env.ICMDS_SHA }}
+          key: icommands-${{ stesp.sha_info.outputs.icommands_sha }}
           path: _build_icommands/*.deb
 
       - name: Install prerequisite packages
@@ -116,26 +121,15 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
           cmake --build _build_icommands --target package
 
-      - name: Build plugin using unreleased iRODS packages
-        uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
-        with:
-          docker_image: ubuntu:22.04
-          build_artifact_suffix: ubuntu_22-main
-          plugin_package_directory: Ubuntu_22
-          irods_testing_environment_project_os: ubuntu-22.04
-          irods_testing_environment_project_db: postgres-16
-          unreleased_irods_build_sha: ${{ env.IRODS_SHA }}
-          unreleased_icommands_build_sha: ${{ env.IRODS_SHA }}
-
-# build_and_test_plugin:
-#   needs: build_irods_and_icommands
-#
-#   uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
-#   with:
-#     docker_image: ubuntu:22.04
-#     build_artifact_suffix: ubuntu_22-main
-#     plugin_package_directory: Ubuntu_22
-#     irods_testing_environment_project_os: ubuntu-22.04
-#     irods_testing_environment_project_db: postgres-16
-#     unreleased_irods_build_sha: ${{ env.IRODS_SHA }}
-#     unreleased_icommands_build_sha: ${{ env.IRODS_SHA }}
+  build_and_test_plugin:
+    needs: build_irods_and_icommands
+ 
+    uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
+    with:
+      docker_image: ubuntu:22.04
+      build_artifact_suffix: ubuntu_22-main
+      plugin_package_directory: Ubuntu_22
+      irods_testing_environment_project_os: ubuntu-22.04
+      irods_testing_environment_project_db: postgres-16
+      unreleased_irods_build_sha: ${{ needs.build_irods_and_icommands.outputs.irods_build_sha }}
+      unreleased_icommands_build_sha: ${{ needs.build_irods_and_icommands.outputs.icommands_build_sha }}
