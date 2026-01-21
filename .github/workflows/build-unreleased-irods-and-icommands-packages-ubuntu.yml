@@ -103,28 +103,39 @@ jobs:
 
       - name: Build iRODS packages
         if: steps.irods.outputs.cache-hit != 'true'
-        run:  |
+        run: |
           mkdir _build_irods
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_irods -S irods
           cmake --build _build_irods --target package
 
       - name: Build iCommands packages
         if: steps.icommands.outputs.cache-hit != 'true'
-        run:  |
+        run: |
           apt-get install -qq ./_build_irods/irods-{dev,runtime}*.deb
           mkdir _build_icommands
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
           cmake --build _build_icommands --target package
 
-  build_and_test_plugin:
-    needs: build_irods_and_icommands
+      - name: Build plugin using unreleased iRODS packages
+        uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
+        with:
+          docker_image: ubuntu:22.04
+          build_artifact_suffix: ubuntu_22-main
+          plugin_package_directory: Ubuntu_22
+          irods_testing_environment_project_os: ubuntu-22.04
+          irods_testing_environment_project_db: postgres-16
+          unreleased_irods_build_sha: ${{ env.IRODS_SHA }}
+          unreleased_icommands_build_sha: ${{ env.IRODS_SHA }}
 
-    uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
-    with:
-      docker_image: ubuntu:22.04
-      build_artifact_suffix: ubuntu_22-main
-      plugin_package_directory: Ubuntu_22
-      irods_testing_environment_project_os: ubuntu-22.04
-      irods_testing_environment_project_db: postgres-16
-      unreleased_irods_build_sha: ${{ env.IRODS_SHA }}
-      unreleased_icommands_build_sha: ${{ env.IRODS_SHA }}
+# build_and_test_plugin:
+#   needs: build_irods_and_icommands
+#
+#   uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
+#   with:
+#     docker_image: ubuntu:22.04
+#     build_artifact_suffix: ubuntu_22-main
+#     plugin_package_directory: Ubuntu_22
+#     irods_testing_environment_project_os: ubuntu-22.04
+#     irods_testing_environment_project_db: postgres-16
+#     unreleased_irods_build_sha: ${{ env.IRODS_SHA }}
+#     unreleased_icommands_build_sha: ${{ env.IRODS_SHA }}
