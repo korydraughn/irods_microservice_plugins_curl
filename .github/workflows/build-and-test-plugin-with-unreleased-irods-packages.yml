@@ -119,7 +119,10 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: build_output-unreleased-${{ inputs.build_artifact_suffix }}
-          path: _build/*.deb
+          path: |
+            _build/*.deb
+            _build_irods/
+            _build_icommands/
           overwrite: true
 
   run_tests:
@@ -165,21 +168,19 @@ jobs:
 #         echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
 #         echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Check cache for iRODS packages
-        uses: actions/cache/restore@v4
-        with:
-#         key: irods-${{ env.IRODS_SHA }}
-          key: irods-${{ inputs.unreleased_irods_build_sha }}
-          path: _build_irods/*.deb
-          fail-on-cache-miss: 'true'
+#     - name: Check cache for iRODS packages
+#       uses: actions/cache/restore@v4
+#       with:
+#         key: irods-${{ inputs.unreleased_irods_build_sha }}
+#         path: _build_irods/*.deb
+#         fail-on-cache-miss: 'true'
 
-      - name: Check cache for iCommands packages
-        uses: actions/cache/restore@v4
-        with:
-#         key: irods-${{ env.IRODS_SHA }}
-          key: irods-${{ inputs.unreleased_icommands_build_sha }}
-          path: _build_icommands/*.deb
-          fail-on-cache-miss: 'true'
+#     - name: Check cache for iCommands packages
+#       uses: actions/cache/restore@v4
+#       with:
+#         key: irods-${{ inputs.unreleased_icommands_build_sha }}
+#         path: _build_icommands/*.deb
+#         fail-on-cache-miss: 'true'
 
       - name: Run tests
         run: |
