@@ -73,8 +73,7 @@ jobs:
       - name: Capture SHAs for caching
         run: |
           git clone https://github.com/irods/irods
-          cd irods
-          echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Check cache for irods/irods packages
         uses: actions/cache/restore@v4

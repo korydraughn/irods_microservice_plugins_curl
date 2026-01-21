@@ -121,7 +121,7 @@ jobs:
 
     uses: ./.github/workflows/build-and-test-plugin-unreleased.yml
     with:
-      docker_image: ${{ matrix.container }}
+      docker_image: ubuntu:22.04
       build_artifact_suffix: ubuntu_22-main
       plugin_package_directory: Ubuntu_22
       irods_testing_environment_project_os: ubuntu-22.04
