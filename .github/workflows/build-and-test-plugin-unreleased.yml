@@ -70,14 +70,9 @@ jobs:
           echo "deb [signed-by=/etc/apt/keyrings/renci-irods-archive-keyring.pgp arch=amd64] https://packages.irods.org/apt/ $(lsb_release -sc) main" | \
             tee /etc/apt/sources.list.d/renci-irods.list
 
-      - name: Checkout iRODS repository
-        uses: actions/checkout@v4
-        with:
-          repository: 'irods/irods'
-          path: 'irods'
-
       - name: Capture SHAs for caching
         run: |
+          git clone https://github.com/irods/irods
           cd irods
           echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
@@ -155,20 +150,10 @@ jobs:
           pip install docker'<7' requests==2.26.0
           pip freeze
 
-      - name: Checkout iRODS repository
-        uses: actions/checkout@v4
-        with:
-          repository: 'irods/irods'
-          path: 'irods'
-
-      - name: Checkout iCommands repository
-        uses: actions/checkout@v4
-        with:
-          repository: 'irods/irods_client_icommands'
-          path: 'irods_client_icommands'
-
       - name: Capture SHAs for caching
         run: |
+          git clone https://github.com/irods/irods
+          git clone https://github.com/irods/irods_client_icommands
           cd irods
           echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
           cd ../irods_client_icommands

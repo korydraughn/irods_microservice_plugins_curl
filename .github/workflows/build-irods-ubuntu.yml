@@ -18,22 +18,12 @@ jobs:
     container: ${{ matrix.container }}
 
     steps:
-      - name: Checkout iRODS repository
-        uses: actions/checkout@v4
-        with:
-          repository: 'irods/irods'
-          path: 'irods'
-
-      - name: Checkout iCommands repository
-        uses: actions/checkout@v4
-        with:
-          repository: 'irods/irods_client_icommands'
-          path: 'irods_client_icommands'
-
       - name: Capture SHAs for caching
         run: |
           apt-get update -qq
           apt-get install -qq git
+          git clone https://github.com/irods/irods
+          git clone https://github.com/irods/irods_client_icommands
           pwd
           ls -lA . irods irods_client_icommands
           echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
