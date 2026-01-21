@@ -151,7 +151,8 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: build_output-unreleased-${{ inputs.build_artifact_suffix }}
-          path: ${{ inputs.plugin_package_directory }}
+#         path: ${{ inputs.plugin_package_directory }}
+          path: build_artifacts
 
       - name: Set up docker compose
         uses: docker/setup-compose-action@v1
@@ -190,16 +191,19 @@ jobs:
 
       - name: Run tests
         run: |
-          ls -lR "${{ inputs.plugin_package_directory }}"
-          ls -l _build_irods _build_icommands
-          mv _build_icommands/*.deb _build_irods
+          ls -lR build_artifacts
+
+          ln -s build_artifacts/_build "${{ inputs.plugin_package_directory }}"
+
+          mv build_artifacts/_build_icommands/*.deb build_artifacts/_build_irods
+
           cd irods_testing_environment
           . venv_testing_env/bin/activate
           project_dir="${{ inputs.irods_testing_environment_project_os }}/${{ inputs.irods_testing_environment_project_os }}-${{ inputs.irods_testing_environment_project_db }}"
           python run_plugin_tests.py \
             "${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}" \
             --project-directory "projects/${project_dir}" \
-            --irods-package-directory ./_build_irods \
+            --irods-package-directory ./build_artifacts/_build_irods \
             --plugin-package-directory .. \
             --discard-logs \
             -vv
