@@ -1,4 +1,4 @@
-name: build-irods-and-icommands-packages-unreleased--ubuntu
+name: build-unreleased-irods-and-icommands-packages-ubuntu
 
 on: [push, pull_request]
 
@@ -18,7 +18,7 @@ jobs:
     container: ${{ matrix.container }}
 
     outputs:
-      irods_build_sha: ${{ steps.sha_info.outputs.irods_build_sha }}
+      irods_build_sha: ${{ steps.sha_info.outputs.irods_sha }}
       icommands_build_sha: ${{ steps.sha_info.outputs.icommands_sha }}
 
     steps:
