@@ -1,0 +1,135 @@
+name: build-and-test-plugin-against-unreleased-irods-1-ubuntu
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_irods_and_icommands:
+    strategy:
+      matrix:
+        container: ['ubuntu:22.04']
+
+    name: Build iRODS and iCommands - ${{ matrix.container }}
+
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+
+    steps:
+      - name: Checkout iRODS repository
+        uses: actions/checkout@v6
+        with:
+          repository: 'irods/irods'
+          path: 'irods'
+
+      - name: Checkout iCommands repository
+        uses: actions/checkout@v6
+        with:
+          repository: 'irods/irods_client_icommands'
+          path: 'irods_client_icommands'
+
+      - name: Capture SHAs for caching
+        run: |
+          cd irods
+          echo "IRODS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          cd ../irods_client_icommands
+          echo "ICMDS_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Check cache for irods/irods packages
+        id: irods
+        uses: actions/cache@v4
+        with:
+          key: irods-${{ env.IRODS_SHA }}
+          path: _build_irods/*.deb
+
+      - name: Check cache for irods/irods_client_icommands package
+        id: icommands
+        uses: actions/cache@v4
+        with:
+          key: icommands-${{ env.ICMDS_SHA }}
+          path: _build_icommands/*.deb
+
+      - name: Install prerequisite packages
+        run: |
+          apt-get update -qq
+          apt-get install -qq \
+            apt-transport-https
+            ca-certificates \
+            dnsutils
+          apt-get install -qq \
+            bison \
+            build-essential \
+            catch2 \
+            cmake \
+            curl \
+            flex \
+            g++ \
+            libarchive-dev \
+            libbz2-dev \
+            libcurl4-gnutls-dev \
+            libfmt-dev \
+            libpam0g-dev \
+            libspdlog-dev \
+            libssl-dev \
+            libsystemd-dev \
+            libxml2-dev \
+            make \
+            ninja-build \
+            nlohmann-json3-dev \
+            odbc-postgresql \
+            python3-dev \
+            python3-distro \
+            python3-psutil \
+            unixodbc \
+            unixodbc-dev \
+            wget \
+            zlib1g-dev
+
+      - name: Set up iRODS externals package repository
+        run: |
+          mkdir -p /etc/apt/keyrings
+          wget -qO - https://unstable.irods.org/irods-unstable-signing-key.asc | \
+            gpg \
+              --no-options \
+              --no-default-keyring \
+              --no-auto-check-trustdb \
+              --homedir /dev/null \
+              --no-keyring \
+              --import-options import-export \
+              --output /etc/apt/keyrings/renci-irods-unstable-archive-keyring.pgp \
+              --import
+          echo "deb [signed-by=/etc/apt/keyrings/renci-irods-unstable-archive-keyring.pgp arch=amd64] https://unstable.irods.org/apt/ $(lsb_release -sc) main" | \
+            tee /etc/apt/sources.list.d/renci-irods-unstable.list
+          apt-get update -qq
+          apt-get install -qq \
+            irods-externals-boost1.81.0-2 \
+            irods-externals-clang16.0.6-0 \
+            irods-externals-jsoncons0.178.0-0 \
+            irods-externals-nanodbc2.13.0-3
+
+      - name: Build iRODS packages
+        if: steps.irods.outputs.cache-hit != 'true'
+        run:  |
+          mkdir _build_irods
+          cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_irods -S irods
+          cmake --build _build_irods --target package
+
+      - name: Build iCommands packages
+        if: steps.icommands.outputs.cache-hit != 'true'
+        run:  |
+          mkdir _build_icommands
+          cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
+          cmake --build _build_icommands --target package
+
+  build_and_test_plugin:
+    needs: build_irods_and_icommands
+
+    uses: ./build-and-test-plugin-unreleased.yml
+    with:
+      docker_image: ${{ matrix.container }}
+      build_artifact_suffix: ubuntu_22-main
+      plugin_package_directory: Ubuntu_22
+      irods_testing_environment_project_os: ubuntu-22.04
+      irods_testing_environment_project_db: postgres-16
