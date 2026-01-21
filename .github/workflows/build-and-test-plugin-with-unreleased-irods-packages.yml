@@ -88,7 +88,7 @@ jobs:
       - name: Check cache for iCommands packages
         uses: actions/cache/restore@v4
         with:
-          key: irods-${{ inputs.unreleased_icommands_build_sha }}
+          key: icommands-${{ inputs.unreleased_icommands_build_sha }}
           path: _build_icommands/*.deb
           fail-on-cache-miss: 'true'
 
