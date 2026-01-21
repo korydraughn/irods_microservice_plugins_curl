@@ -1,4 +1,4 @@
-name: build-and-test-plugin-against-unreleased-irods-1-ubuntu
+name: build-irods-and-icommands-packages-unreleased--ubuntu
 
 on: [push, pull_request]
 
@@ -24,8 +24,6 @@ jobs:
           apt-get install -qq git
           git clone https://github.com/irods/irods
           git clone https://github.com/irods/irods_client_icommands
-          pwd
-          ls -lA . irods irods_client_icommands
           echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
           echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
 
@@ -44,6 +42,7 @@ jobs:
           path: _build_icommands/*.deb
 
       - name: Install prerequisite packages
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
         run: |
           apt-get update -qq
           apt-get install -qq \
@@ -80,6 +79,7 @@ jobs:
             zlib1g-dev
 
       - name: Set up iRODS externals package repository
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
         run: |
           mkdir -p /etc/apt/keyrings
           wget -qO - https://unstable.irods.org/irods-unstable-signing-key.asc | \
@@ -119,7 +119,7 @@ jobs:
   build_and_test_plugin:
     needs: build_irods_and_icommands
 
-    uses: ./.github/workflows/build-and-test-plugin-unreleased.yml
+    uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
     with:
       docker_image: ubuntu:22.04
       build_artifact_suffix: ubuntu_22-main
