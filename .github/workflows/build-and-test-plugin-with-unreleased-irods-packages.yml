@@ -78,17 +78,18 @@ jobs:
           echo "deb [signed-by=/etc/apt/keyrings/renci-irods-unstable-archive-keyring.pgp arch=amd64] https://unstable.irods.org/apt/ $(lsb_release -sc) main" | \
             tee /etc/apt/sources.list.d/renci-irods-unstable.list
 
-#     - name: Capture SHAs for caching
-#       run: |
-#         git clone https://github.com/irods/irods
-#         echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
-
       - name: Check cache for iRODS packages
         uses: actions/cache/restore@v4
         with:
-#         key: irods-${{ env.IRODS_SHA }}
           key: irods-${{ inputs.unreleased_irods_build_sha }}
           path: _build_irods/*.deb
+          fail-on-cache-miss: 'true'
+
+      - name: Check cache for iCommands packages
+        uses: actions/cache/restore@v4
+        with:
+          key: irods-${{ inputs.unreleased_icommands_build_sha }}
+          path: _build_icommands/*.deb
           fail-on-cache-miss: 'true'
 
       - name: Install iRODS development packages
@@ -115,14 +116,19 @@ jobs:
       - name: List contents of build directory
         run: ls -l _build
 
+      # The server and icommands packages were built and cached while inside of a container.
+      # We cannot use actions/cache to get the server and icommands packages in the next job because
+      # GHA ties the cache to the runner's OS. For this workflow, the run_tests job does not run inside
+      # of a container. This leads to a cache miss, causing the workflow to fail. To get around that, we
+      # use upload-artifact and download-artifact.
       - name: Upload build output for dependent jobs
         uses: actions/upload-artifact@v6
         with:
           name: build_output-unreleased-${{ inputs.build_artifact_suffix }}
           path: |
             _build/*.deb
-            _build_irods/
-            _build_icommands/
+            _build_irods/*.deb
+            _build_icommands/*.deb
           overwrite: true
 
   run_tests:
