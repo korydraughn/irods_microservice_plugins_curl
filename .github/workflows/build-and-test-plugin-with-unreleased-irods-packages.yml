@@ -190,8 +190,8 @@ jobs:
 
       - name: Run tests
         run: |
+          ls -l _build_irods _build_icommands
           mv _build_icommands/*.deb _build_irods
-          ls -l _build_irods
           ls -l "${{ inputs.plugin_package_directory }}"
           cd irods_testing_environment
           . venv_testing_env/bin/activate
