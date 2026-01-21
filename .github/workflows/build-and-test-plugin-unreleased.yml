@@ -71,7 +71,7 @@ jobs:
             tee /etc/apt/sources.list.d/renci-irods.list
 
       - name: Checkout iRODS repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: 'irods/irods'
           path: 'irods'
@@ -156,13 +156,13 @@ jobs:
           pip freeze
 
       - name: Checkout iRODS repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: 'irods/irods'
           path: 'irods'
 
       - name: Checkout iCommands repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: 'irods/irods_client_icommands'
           path: 'irods_client_icommands'
