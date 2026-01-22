@@ -23,12 +23,20 @@ on:
         description: The DB component of the project directory to test against. When joined with 'irods_testing_environment_project_os', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. postgres-16).
         required: true
         type: string
-      unreleased_irods_build_sha:
+      build_sha_irods:
         description: The SHA of the irods/irods build.
         required: true
         type: string
-      unreleased_icommands_build_sha:
+      build_sha_icommands:
         description: The SHA of the irods/irods_client_icommands build.
+        required: true
+        type: string
+      cache_key_irods_packages:
+        description: The key which potentially identifies a cached build of the irods/irods source code.
+        required: true
+        type: string
+      cache_key_icommands_packages:
+        description: The key which potentially identifies a cached build of the irods/irods_client_icommands source code.
         required: true
         type: string
 
@@ -49,6 +57,7 @@ jobs:
 
       - name: Install prerequisite packages
         run: |
+          set -x
           apt-get update -qq
           apt-get install -qq \
             build-essential \
@@ -64,6 +73,7 @@ jobs:
 
       - name: Set up iRODS externals package repository
         run: |
+          set -x
           mkdir -p /etc/apt/keyrings
           wget -qO - https://unstable.irods.org/irods-unstable-signing-key.asc | \
             gpg \
@@ -81,19 +91,20 @@ jobs:
       - name: Check cache for iRODS packages
         uses: actions/cache/restore@v4
         with:
-          key: irods-${{ inputs.unreleased_irods_build_sha }}
+          key: ${{ inputs.cache_key_irods_packages }}
           path: _build_irods/*.deb
           fail-on-cache-miss: 'true'
 
       - name: Check cache for iCommands packages
         uses: actions/cache/restore@v4
         with:
-          key: icommands-${{ inputs.unreleased_icommands_build_sha }}
+          key: ${{ inputs.cache_key_icommands_packages }}
           path: _build_icommands/*.deb
           fail-on-cache-miss: 'true'
 
       - name: Install iRODS development packages
         run: |
+          set -x
           apt-get update -qq
           apt-get install -qq \
             ./_build_irods/irods-dev*.deb \
@@ -101,6 +112,7 @@ jobs:
 
       - name: Install iRODS python CI utilities
         run: |
+          set -x
           if [[ "${{ inputs.docker_image }}" == "ubuntu:22.04" ]]; then
             python3 -m pip install git+https://github.com/irods/irods_python_ci_utilities.git@main
           else
@@ -110,13 +122,16 @@ jobs:
 
       - name: Build and package
         run: |
+          set -x
           mkdir _build
           python3 irods_consortium_continuous_integration_build_hook.py --build_directory _build
 
       - name: List contents of build directory
-        run: ls -l _build
+        run: |
+          set -x
+          ls -l _build
 
-      # The server and icommands packages were built and cached while inside of a container.
+      # The server and icommands packages were built and cached while inside of a docker container.
       # We cannot use actions/cache to get the server and icommands packages in the next job because
       # GHA ties the cache to the runner's OS. For this workflow, the run_tests job does not run inside
       # of a container. This leads to a cache miss, causing the workflow to fail. To get around that, we
@@ -151,7 +166,6 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: build_output-unreleased-${{ inputs.build_artifact_suffix }}
-#         path: ${{ inputs.plugin_package_directory }}
           path: build_artifacts
 
       - name: Set up docker compose
@@ -159,6 +173,7 @@ jobs:
 
       - name: Set up iRODS testing environment
         run: |
+          set -x
           git clone -b main --depth 1 --single-branch https://github.com/irods/irods_testing_environment
           cd irods_testing_environment
           python3 -m venv venv_testing_env
@@ -168,37 +183,33 @@ jobs:
           pip install docker'<7' requests==2.26.0
           pip freeze
 
-#     - name: Capture SHAs for caching
-#       run: |
-#         git clone https://github.com/irods/irods
-#         git clone https://github.com/irods/irods_client_icommands
-#         echo "IRODS_SHA=$(git -C irods rev-parse HEAD)" >> $GITHUB_ENV
-#         echo "ICMDS_SHA=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_ENV
-
+      # XXX Cannot use this since the "key" is tied to the GHA runner OS. 
+      # i.e. We build packages in a container, but run tests from a VM.
 #     - name: Check cache for iRODS packages
 #       uses: actions/cache/restore@v4
 #       with:
-#         key: irods-${{ inputs.unreleased_irods_build_sha }}
+#         key: ${{ inputs.cache_key_irods_packages }}
 #         path: _build_irods/*.deb
 #         fail-on-cache-miss: 'true'
 
 #     - name: Check cache for iCommands packages
 #       uses: actions/cache/restore@v4
 #       with:
-#         key: irods-${{ inputs.unreleased_icommands_build_sha }}
+#         key: ${{ inputs.cache_key_icommands_packages }}
 #         path: _build_icommands/*.deb
 #         fail-on-cache-miss: 'true'
 
       - name: Run tests
         run: |
-          ls -lR build_artifacts
+          set -x
 
+          # Create a symlink to the directory containing the recently built plugin packages.
+          # This is required by the irods_python_irods_ci_utilities module.
           ln -s build_artifacts/_build "${{ inputs.plugin_package_directory }}"
-          ls -ld "${{ inputs.plugin_package_directory }}"
-          ls -l "${{ inputs.plugin_package_directory }}"
 
+          # Move the icommands package into the same directory containing the server packages.
+          # This is required by the testing environment.
           mv build_artifacts/_build_icommands/*.deb build_artifacts/_build_irods
-          ls -lR build_artifacts
 
           cd irods_testing_environment
           . venv_testing_env/bin/activate

@@ -10,45 +10,76 @@ jobs:
   build_irods_and_icommands:
     strategy:
       matrix:
-        container: ['ubuntu:22.04']
+        include:
+          - docker_image: ubuntu:22.04
+            cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
+            build_artifact_suffix: ubuntu_22-main
+            plugin_package_directory: Ubuntu_22
+            irods_testing_environment_project_os: ubuntu-22.04
+            irods_testing_environment_project_db: postgres-16
+          - docker_image: ubuntu:24.04
+            cache_key_icommands_packages_prefix: cache-icommands-ubuntu-24.04
+            build_artifact_suffix: ubuntu_24-main
+            plugin_package_directory: Ubuntu_24
+            irods_testing_environment_project_os: ubuntu-24.04
+            irods_testing_environment_project_db: postgres-16
 
-    name: Build iRODS and iCommands - ${{ matrix.container }}
+    name: Build iRODS and iCommands - ${{ matrix.docker_image }}
 
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container: ${{ matrix.docker_image }}
 
     outputs:
-      irods_build_sha: ${{ steps.sha_info.outputs.irods_sha }}
-      icommands_build_sha: ${{ steps.sha_info.outputs.icommands_sha }}
+      docker_image: ${{ matrix.docker_image }}
+      build_artifact_suffix: ${{ matrix.build_artifact_suffix }}
+      plugin_package_directory: ${{ matrix.plugin_package_directory }}
+      irods_testing_environment_project_os: ${{ matrix.irods_testing_environment_project_os }}
+      irods_testing_environment_project_db: ${{ matrix.irods_testing_environment_project_db }}
+      build_sha_irods: ${{ steps.init.outputs.sha_irods }}
+      build_sha_icommands: ${{ steps.init.outputs.sha_icommands }}
+      cache_key_irods_packages: ${{ steps.init.outputs.cache_key_irods_packages }}
+      cache_key_icommands_packages: ${{ steps.init.outputs.cache_key_icommands_packages }}
 
     steps:
-      - name: Capture SHAs for caching
-        id: sha_info
+      - name: Capture SHAs of base iRODS repos and initialize keys caching packages
+        id: init
         run: |
+          set -x
+
           apt-get update -qq
           apt-get install -qq git
+
           git clone -b main --depth 1 --single-branch https://github.com/irods/irods
           git clone -b main --depth 1 --single-branch https://github.com/irods/irods_client_icommands
-          echo "irods_sha=$(git -C irods rev-parse HEAD)" >> $GITHUB_OUTPUT
-          echo "icommands_sha=$(git -C irods_client_icommands rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+          # Make SHAs available to other steps and jobs within the workflow.
+          sha_irods=$(git -C irods rev-parse HEAD)
+          sha_icmds=$(git -C irods_client_icommands rev-parse HEAD)
+          echo "sha_irods=$sha_irods" >> $GITHUB_OUTPUT
+          echo "sha_icommands=$sha_icmds" >> $GITHUB_OUTPUT
+
+          # Initialize keys for caching unreleased packages.
+          echo "cache_key_irods_packages=${{ matrix.cache_key_irods_packages_prefix }}-$sha_irods" >> $GITHUB_OUTPUT
+          echo "cache_key_icommands_packages=${{ matrix.cache_key_icommands_packages_prefix }}-$sha_icmds" >> $GITHUB_OUTPUT
 
       - name: Check cache for iRODS packages
         id: irods
         uses: actions/cache@v4
         with:
-          key: irods-${{ steps.sha_info.outputs.irods_sha  }}
+          key: ${{ steps.init.outputs.cache_key_irods_packages }}
           path: _build_irods/*.deb
 
       - name: Check cache for iCommands package
         id: icommands
         uses: actions/cache@v4
         with:
-          key: icommands-${{ steps.sha_info.outputs.icommands_sha }}
+          key: ${{ steps.init.outputs.cache_key_icommands_packages }}
           path: _build_icommands/*.deb
 
       - name: Install prerequisite packages
         if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
         run: |
+          set -x
           apt-get update -qq
           apt-get install -qq \
             apt-transport-https \
@@ -71,7 +102,6 @@ jobs:
             libssl-dev \
             libsystemd-dev \
             libxml2-dev \
-            make \
             ninja-build \
             nlohmann-json3-dev \
             odbc-postgresql \
@@ -86,6 +116,7 @@ jobs:
       - name: Set up iRODS externals package repository
         if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
         run: |
+          set -x
           mkdir -p /etc/apt/keyrings
           wget -qO - https://unstable.irods.org/irods-unstable-signing-key.asc | \
             gpg \
@@ -109,6 +140,7 @@ jobs:
       - name: Build iRODS packages
         if: steps.irods.outputs.cache-hit != 'true'
         run: |
+          set -x
           mkdir _build_irods
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_irods -S irods
           cmake --build _build_irods --target package
@@ -116,6 +148,7 @@ jobs:
       - name: Build iCommands packages
         if: steps.icommands.outputs.cache-hit != 'true'
         run: |
+          set -x
           apt-get install -qq ./_build_irods/irods-{dev,runtime}*.deb
           mkdir _build_icommands
           cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
@@ -126,10 +159,12 @@ jobs:
  
     uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
     with:
-      docker_image: ubuntu:22.04
-      build_artifact_suffix: ubuntu_22-main
-      plugin_package_directory: Ubuntu_22
-      irods_testing_environment_project_os: ubuntu-22.04
-      irods_testing_environment_project_db: postgres-16
-      unreleased_irods_build_sha: ${{ needs.build_irods_and_icommands.outputs.irods_build_sha }}
-      unreleased_icommands_build_sha: ${{ needs.build_irods_and_icommands.outputs.icommands_build_sha }}
+      docker_image: ${{ needs.build_irods_and_icommands.outputs.docker_image }}
+      build_artifact_suffix: ${{ needs.build_irods_and_icommands.outputs.build_artifact_suffix }}
+      plugin_package_directory: ${{ needs.build_irods_and_icommands.outputs.plugin_package_directory }}
+      irods_testing_environment_project_os: ${{ needs.build_irods_and_icommands.outputs.irods_testing_environment_project_os }}
+      irods_testing_environment_project_db: ${{ needs.build_irods_and_icommands.outputs.irods_testing_environment_project_db }}
+      build_sha_irods: ${{ needs.build_irods_and_icommands.outputs.build_sha_irods }}
+      build_sha_icommands: ${{ needs.build_irods_and_icommands.outputs.build_sha_icommands }}
+      cache_key_irods_packages: ${{ needs.build_irods_and_icommands.outputs.cache_key_irods_packages }}
+      cache_key_icommands_packages: ${{ needs.build_irods_and_icommands.outputs.cache_key_icommands_packages }}
