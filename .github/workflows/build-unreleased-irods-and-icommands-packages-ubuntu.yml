@@ -15,6 +15,7 @@ jobs:
           - docker_image: ubuntu:22.04
             cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
             cache_key_icommands_packages_prefix: cache-icommands-ubuntu-22.04
+            ccache_key: ccache-irods-ubuntu-22.04
             build_artifact_suffix: ubuntu_22-main
             plugin_package_directory: Ubuntu_22
             irods_testing_environment_project_os: ubuntu-22.04
@@ -22,6 +23,7 @@ jobs:
           - docker_image: ubuntu:24.04
             cache_key_irods_packages_prefix: cache-irods-ubuntu-24.04
             cache_key_icommands_packages_prefix: cache-icommands-ubuntu-24.04
+            ccache_key: ccache-irods-ubuntu-24.04
             build_artifact_suffix: ubuntu_24-main
             plugin_package_directory: Ubuntu_24
             irods_testing_environment_project_os: ubuntu-24.04
@@ -151,7 +153,7 @@ jobs:
         if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
-          key: ${{ steps.init.outputs.cache_key_irods_packages }}-ccache
+          key: ${{ matrix.ccache_key }}
           path: /irods_build_cache/
 
       - name: Build iRODS packages
