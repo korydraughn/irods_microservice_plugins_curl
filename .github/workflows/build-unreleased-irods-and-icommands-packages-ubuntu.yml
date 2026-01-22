@@ -174,7 +174,7 @@ jobs:
           set -x
           apt-get install -qq ./_build_irods/irods-{dev,runtime}*.deb
           mkdir _build_icommands
-          cmake 
+          cmake \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=Debug \
