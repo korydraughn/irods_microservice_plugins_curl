@@ -8,16 +8,19 @@ defaults:
 
 jobs:
   build_irods_and_icommands:
+    # TODO Make this job reusable and call it from the primary workflow
     strategy:
       matrix:
         include:
           - docker_image: ubuntu:22.04
             cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
+            cache_key_icommands_packages_prefix: cache-icommands-ubuntu-22.04
             build_artifact_suffix: ubuntu_22-main
             plugin_package_directory: Ubuntu_22
             irods_testing_environment_project_os: ubuntu-22.04
             irods_testing_environment_project_db: postgres-16
           - docker_image: ubuntu:24.04
+            cache_key_irods_packages_prefix: cache-irods-ubuntu-24.04
             cache_key_icommands_packages_prefix: cache-icommands-ubuntu-24.04
             build_artifact_suffix: ubuntu_24-main
             plugin_package_directory: Ubuntu_24
@@ -137,12 +140,32 @@ jobs:
             irods-externals-jsoncons0.178.0-0 \
             irods-externals-nanodbc2.13.0-3
 
+      - name: Configure ccache
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+        run: |
+          apt-get install -qq ccache
+          export CCACHE_DIR="/irods_build_cache"
+          export CCACHE_MAXSIZE="1G"
+
+      - name: Restore ccache state
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          key: ${{ steps.init.outputs.cache_key_irods_packages }}-ccache
+          path: /irods_build_cache/
+
       - name: Build iRODS packages
         if: steps.irods.outputs.cache-hit != 'true'
         run: |
           set -x
           mkdir _build_irods
-          cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_irods -S irods
+          cmake \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -GNinja \
+            -B _build_irods \
+            -S irods
           cmake --build _build_irods --target package
 
       - name: Build iCommands packages
@@ -151,7 +174,13 @@ jobs:
           set -x
           apt-get install -qq ./_build_irods/irods-{dev,runtime}*.deb
           mkdir _build_icommands
-          cmake -DCMAKE_BUILD_TYPE=Debug -GNinja -B _build_icommands -S irods_client_icommands
+          cmake 
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -GNinja \
+            -B _build_icommands \
+            -S irods_client_icommands
           cmake --build _build_icommands --target package
 
   build_and_test_plugin:
