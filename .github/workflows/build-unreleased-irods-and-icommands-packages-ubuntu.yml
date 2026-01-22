@@ -157,7 +157,7 @@ jobs:
   build_and_test_plugin:
     needs: build_irods_and_icommands
  
-    uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages.yml
+    uses: ./.github/workflows/build-and-test-plugin-with-unreleased-irods-packages-ubuntu.yml
     with:
       docker_image: ${{ needs.build_irods_and_icommands.outputs.docker_image }}
       build_artifact_suffix: ${{ needs.build_irods_and_icommands.outputs.build_artifact_suffix }}
