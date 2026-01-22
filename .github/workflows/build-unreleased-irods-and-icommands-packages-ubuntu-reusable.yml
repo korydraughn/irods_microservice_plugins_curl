@@ -28,6 +28,25 @@ on:
         required: true
         type: string
         default: postgres-16
+    outputs:
+      docker_image:
+        value: ${{ jobs.build_irods_and_icommands.outputs.docker_image }}
+      build_artifact_suffix:
+        value: ${{ jobs.build_irods_and_icommands.outputs.build_artifact_suffix }}
+      plugin_package_directory:
+        value: ${{ jobs.build_irods_and_icommands.outputs.plugin_package_directory }}
+      irods_testing_environment_project_os:
+        value: ${{ jobs.build_irods_and_icommands.outputs.irods_testing_environment_project_os }}
+      irods_testing_environment_project_db:
+        value: ${{ jobs.build_irods_and_icommands.outputs.irods_testing_environment_project_db }}
+      build_sha_irods:
+        value: ${{ jobs.build_irods_and_icommands.outputs.sha_irods }}
+      build_sha_icommands:
+        value: ${{ jobs.build_irods_and_icommands.outputs.sha_icommands }}
+      cache_key_irods_packages:
+        value: ${{ jobs.build_irods_and_icommands.outputs.cache_key_irods_packages }}
+      cache_key_icommands_packages:
+        value: ${{ jobs.build_irods_and_icommands.outputs.cache_key_icommands_packages }}
 
 defaults:
   run:
