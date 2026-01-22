@@ -194,8 +194,11 @@ jobs:
           ls -lR build_artifacts
 
           ln -s build_artifacts/_build "${{ inputs.plugin_package_directory }}"
+          ls -ld "${{ inputs.plugin_package_directory }}"
+          ls -l "${{ inputs.plugin_package_directory }}"
 
           mv build_artifacts/_build_icommands/*.deb build_artifacts/_build_irods
+          ls -lR build_artifacts
 
           cd irods_testing_environment
           . venv_testing_env/bin/activate
@@ -203,7 +206,7 @@ jobs:
           python run_plugin_tests.py \
             "${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}" \
             --project-directory "projects/${project_dir}" \
-            --irods-package-directory ./build_artifacts/_build_irods \
+            --irods-package-directory ../build_artifacts/_build_irods \
             --plugin-package-directory .. \
             --discard-logs \
             -vv
