@@ -94,6 +94,7 @@ jobs:
             bison \
             build-essential \
             catch2 \
+            ccache \
             cmake \
             curl \
             flex \
@@ -142,12 +143,12 @@ jobs:
             irods-externals-jsoncons0.178.0-0 \
             irods-externals-nanodbc2.13.0-3
 
-      - name: Configure ccache
-        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
-        run: |
-          apt-get install -qq ccache
-          export CCACHE_DIR="/irods_build_cache"
-          export CCACHE_MAXSIZE="1G"
+#     - name: Configure ccache
+#       if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+#       run: |
+#         apt-get install -qq ccache
+#         export CCACHE_DIR="/irods_build_cache"
+#         export CCACHE_MAXSIZE="1G"
 
       - name: Restore ccache state
         if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
@@ -158,6 +159,9 @@ jobs:
 
       - name: Build iRODS packages
         if: steps.irods.outputs.cache-hit != 'true'
+        env:
+          CCACHE_DIR: /irods_build_cache
+          CCACHE_MAXSIZE: 1G
         run: |
           set -x
           mkdir _build_irods
