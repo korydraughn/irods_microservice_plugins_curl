@@ -1,4 +1,4 @@
-name: build-unreleased-irods-and-icommands-packages-ubuntu-reusable
+name: build-irods-and-icommands-packages-ubuntu
 
 on:
   workflow_call:

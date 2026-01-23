@@ -1,22 +1,22 @@
-name: build-and-test-plugin-with-unreleased-irods-packages-ubuntu
+name: build-and-test-plugin-with-irods-packages-debian
 
 on:
   workflow_call:
     inputs:
       docker_image:
-        description: The docker image and tag identifying the OS used to compile the plugin (e.g. ubuntu:24.04).
+        description: The docker image and tag identifying the OS used to compile the plugin (e.g. debian:13).
         required: true
         type: string
       build_artifact_suffix:
-        description: The name used to uniquely identify build output across workflow jobs (e.g. ubuntu_24-5.0.2-0).
+        description: The name used to uniquely identify build output across workflow jobs (e.g. debian_13-main).
         required: true
         type: string
       plugin_package_directory:
-        description: The directory name which is expected to hold the plugin packages (e.g. Ubuntu_24). Required by the irods_python_ci_utilities module.
+        description: The directory name which is expected to hold the plugin packages (e.g. 'Debian gnu_linux_13'). Required by the irods_python_ci_utilities module.
         required: true
         type: string
       irods_testing_environment_project_os:
-        description: The OS component of the project directory to test against. When joined with 'irods_testing_environment_project_db', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. ubuntu-24.04).
+        description: The OS component of the project directory to test against. When joined with 'irods_testing_environment_project_db', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. debian-13).
         required: true
         type: string
       irods_testing_environment_project_db:
@@ -113,12 +113,8 @@ jobs:
       - name: Install iRODS python CI utilities
         run: |
           set -x
-          if [[ "${{ inputs.docker_image }}" == "ubuntu:22.04" ]]; then
-            python3 -m pip install git+https://github.com/irods/irods_python_ci_utilities.git@main
-          else
-            # TODO(#18): Investigate how to remove the need for --break-system-packages.
-            python3 -m pip install --break-system-packages git+https://github.com/irods/irods_python_ci_utilities.git@main
-          fi
+          # TODO(#18): Investigate how to remove the need for --break-system-packages.
+          python3 -m pip install --break-system-packages git+https://github.com/irods/irods_python_ci_utilities.git@main
 
       - name: Build and package
         run: |
