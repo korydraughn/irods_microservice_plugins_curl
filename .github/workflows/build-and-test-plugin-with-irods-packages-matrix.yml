@@ -16,7 +16,7 @@ jobs:
             cache_key_irods_packages_prefix: cache-irods-debian-12
             cache_key_icommands_packages_prefix: cache-icommands-debian-12
             ccache_key: ccache-irods-debian-12
-            build_artifact_suffix: 'Debian gnu_linux_12-main'
+            build_artifact_suffix: debian_12-main
             plugin_package_directory: 'Debian gnu_linux_12'
             irods_testing_environment_project_os: debian-12
             irods_testing_environment_project_db: postgres-16
@@ -26,7 +26,7 @@ jobs:
             cache_key_irods_packages_prefix: cache-irods-debian-13
             cache_key_icommands_packages_prefix: cache-icommands-debian-13
             ccache_key: ccache-irods-debian-13
-            build_artifact_suffix: 'Debian gnu_linux_13-main'
+            build_artifact_suffix: debian_13-main
             plugin_package_directory: 'Debian gnu_linux_13'
             irods_testing_environment_project_os: debian-13
             irods_testing_environment_project_db: postgres-16
@@ -34,6 +34,43 @@ jobs:
     # TODO
 #   uses: irods/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-debian.yml@main
     uses: ./.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-debian.yml
+    with:
+      docker_image: ${{ matrix.docker_image }}
+      cache_key_irods_packages_prefix: ${{ matrix.cache_key_irods_packages_prefix }}
+      cache_key_icommands_packages_prefix: ${{ matrix.cache_key_icommands_packages_prefix }}
+      ccache_key: ${{ matrix.ccache_key }}
+      build_artifact_suffix: ${{ matrix.build_artifact_suffix }}
+      plugin_package_directory: ${{ matrix.plugin_package_directory }}
+      irods_testing_environment_project_os: ${{ matrix.irods_testing_environment_project_os }}
+      irods_testing_environment_project_db: ${{ matrix.irods_testing_environment_project_db }}
+
+  enterprise_linux:
+    strategy:
+      matrix:
+        include:
+          # EL9
+          - docker_image: rockylinux/rockylinux:9
+            cache_key_irods_packages_prefix: cache-irods-el9
+            cache_key_icommands_packages_prefix: cache-icommands-el9
+            ccache_key: ccache-irods-el9
+            build_artifact_suffix: rockylinux_9-main
+            plugin_package_directory: 'Rocky linux_9'
+            irods_testing_environment_project_os: rockylinux-9
+            irods_testing_environment_project_db: postgres-16
+
+          # EL10
+          - docker_image: rockylinux/rockylinux:10
+            cache_key_irods_packages_prefix: cache-irods-el10
+            cache_key_icommands_packages_prefix: cache-icommands-el10
+            ccache_key: ccache-irods-el10
+            build_artifact_suffix: rockylinux_10-main
+            plugin_package_directory: 'Rocky linux_10'
+            irods_testing_environment_project_os: rockylinux-10
+            irods_testing_environment_project_db: postgres-16
+
+    # TODO
+#   uses: irods/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-debian.yml@main
+    uses: ./.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-enterprise-linux.yml
     with:
       docker_image: ${{ matrix.docker_image }}
       cache_key_irods_packages_prefix: ${{ matrix.cache_key_irods_packages_prefix }}

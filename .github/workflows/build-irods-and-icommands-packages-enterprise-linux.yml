@@ -1,0 +1,200 @@
+name: build-irods-and-icommands-packages-enterprise-linux
+
+on:
+  workflow_call:
+    inputs:
+      docker_image:
+        required: true
+        type: string
+      cache_key_irods_packages_prefix:
+        required: true
+        type: string
+      cache_key_icommands_packages_prefix:
+        required: true
+        type: string
+      ccache_key:
+        required: true
+        type: string
+      build_artifact_suffix:
+        required: true
+        type: string
+      plugin_package_directory:
+        required: true
+        type: string
+      irods_testing_environment_project_os:
+        required: true
+        type: string
+      irods_testing_environment_project_db:
+        required: true
+        type: string
+        default: postgres-16
+    outputs:
+      docker_image:
+        value: ${{ jobs.build_irods_and_icommands.outputs.docker_image }}
+      build_artifact_suffix:
+        value: ${{ jobs.build_irods_and_icommands.outputs.build_artifact_suffix }}
+      plugin_package_directory:
+        value: ${{ jobs.build_irods_and_icommands.outputs.plugin_package_directory }}
+      irods_testing_environment_project_os:
+        value: ${{ jobs.build_irods_and_icommands.outputs.irods_testing_environment_project_os }}
+      irods_testing_environment_project_db:
+        value: ${{ jobs.build_irods_and_icommands.outputs.irods_testing_environment_project_db }}
+      build_sha_irods:
+        value: ${{ jobs.build_irods_and_icommands.outputs.sha_irods }}
+      build_sha_icommands:
+        value: ${{ jobs.build_irods_and_icommands.outputs.sha_icommands }}
+      cache_key_irods_packages:
+        value: ${{ jobs.build_irods_and_icommands.outputs.cache_key_irods_packages }}
+      cache_key_icommands_packages:
+        value: ${{ jobs.build_irods_and_icommands.outputs.cache_key_icommands_packages }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_irods_and_icommands:
+    name: Build iRODS and iCommands - ${{ inputs.docker_image }}
+
+    runs-on: ubuntu-latest
+    container: ${{ inputs.docker_image }}
+
+    outputs:
+      docker_image: ${{ inputs.docker_image }}
+      build_artifact_suffix: ${{ inputs.build_artifact_suffix }}
+      plugin_package_directory: ${{ inputs.plugin_package_directory }}
+      irods_testing_environment_project_os: ${{ inputs.irods_testing_environment_project_os }}
+      irods_testing_environment_project_db: ${{ inputs.irods_testing_environment_project_db }}
+      build_sha_irods: ${{ steps.init.outputs.sha_irods }}
+      build_sha_icommands: ${{ steps.init.outputs.sha_icommands }}
+      cache_key_irods_packages: ${{ steps.init.outputs.cache_key_irods_packages }}
+      cache_key_icommands_packages: ${{ steps.init.outputs.cache_key_icommands_packages }}
+
+    steps:
+      - name: Capture SHAs of base iRODS repos and initialize keys caching packages
+        id: init
+        run: |
+          set -x
+
+          dnf update -y
+          dnf install -y git
+
+          git clone -b main --depth 1 --single-branch https://github.com/irods/irods
+          git clone -b main --depth 1 --single-branch https://github.com/irods/irods_client_icommands
+
+          # Make SHAs available to other steps and jobs within the workflow.
+          sha_irods=$(git -C irods rev-parse HEAD)
+          sha_icmds=$(git -C irods_client_icommands rev-parse HEAD)
+          echo "sha_irods=$sha_irods" >> $GITHUB_OUTPUT
+          echo "sha_icommands=$sha_icmds" >> $GITHUB_OUTPUT
+
+          # Initialize keys for caching unreleased packages.
+          echo "cache_key_irods_packages=${{ inputs.cache_key_irods_packages_prefix }}-$sha_irods" >> $GITHUB_OUTPUT
+          echo "cache_key_icommands_packages=${{ inputs.cache_key_icommands_packages_prefix }}-$sha_icmds" >> $GITHUB_OUTPUT
+
+      - name: Check cache for iRODS packages
+        id: irods
+        uses: actions/cache@v4
+        with:
+          key: ${{ steps.init.outputs.cache_key_irods_packages }}
+          path: _build_irods/*.deb
+
+      - name: Check cache for iCommands package
+        id: icommands
+        uses: actions/cache@v4
+        with:
+          key: ${{ steps.init.outputs.cache_key_icommands_packages }}
+          path: _build_icommands/*.deb
+
+      - name: Install prerequisite packages
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          dnf update -y
+          dnf install -y \
+            bind-utils \
+            ca-certificates \
+            dnf-plugins-core \
+            epel-release \
+            wget
+          dnf config-manager --set-enabled crb
+          dnf install -y \
+            bison \
+            bzip2-devel \
+            catch2-devel \
+            cmake \
+            curl-devel \
+            fakeroot \
+            flex \
+            fmt-devel \
+            gcc \
+            gcc-c++ \
+            libarchive-devel \
+            ninja-build \
+            nlohmann_json-devel \
+            openssl-devel \
+            pam-devel \
+            python3-devel \
+            python3-distro \
+            rpm-build \
+            spdlog-devel \
+            systemd-devel \
+            unixODBC \
+            unixODBC-devel \
+            zlib-devel
+
+      - name: Set up iRODS externals package repository
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          rpm --import https://unstable.irods.org/irods-unstable-signing-key.asc
+          wget -qO - https://unstable.irods.org/renci-irods-unstable.yum.repo | tee /etc/yum.repos.d/renci-irods-unstable.yum.repo
+          dnf update -y
+          dnf install -y \
+            irods-externals-boost1.81.0-2 \
+            irods-externals-clang16.0.6-0 \
+            irods-externals-jsoncons0.178.0-0 \
+            irods-externals-nanodbc2.13.0-3
+
+      - name: Configure ccache
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+        run: |
+          dnf install -y ccache
+          echo "CCACHE_DIR=/irods_build_cache" >> $GITHUB_ENV
+          echo "CCACHE_MAXSIZE=1G" >> $GITHUB_ENV
+
+      - name: Restore ccache state
+        if: steps.irods.outputs.cache-hit != 'true' || steps.icommands.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          key: ${{ inputs.ccache_key }}
+          path: /irods_build_cache/
+
+      - name: Build iRODS packages
+        if: steps.irods.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          mkdir _build_irods
+          cmake \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -GNinja \
+            -B _build_irods \
+            -S irods
+          cmake --build _build_irods --target package
+
+      - name: Build iCommands packages
+        if: steps.icommands.outputs.cache-hit != 'true'
+        run: |
+          set -x
+          dnf install -y ./_build_irods/irods-{dev,runtime}*.rpm
+          mkdir _build_icommands
+          cmake \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -GNinja \
+            -B _build_icommands \
+            -S irods_client_icommands
+          cmake --build _build_icommands --target package
