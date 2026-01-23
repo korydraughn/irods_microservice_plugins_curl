@@ -112,17 +112,14 @@ jobs:
           set -x
           apt-get update -qq
           apt-get install -qq \
-            apt-transport-https \
-            ca-certificates \
-            dnsutils
-          apt-get install -qq \
             bison \
-            build-essential \
+            ca-certificates \
             catch2 \
             cmake \
             curl \
             flex \
             g++ \
+            gnupg \
             libarchive-dev \
             libbz2-dev \
             libcurl4-gnutls-dev \
