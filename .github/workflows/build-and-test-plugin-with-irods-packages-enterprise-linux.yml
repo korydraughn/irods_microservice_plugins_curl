@@ -84,14 +84,14 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           key: ${{ inputs.cache_key_irods_packages }}
-          path: _build_irods/*.deb
+          path: _build_irods/*.rpm
           fail-on-cache-miss: 'true'
 
       - name: Check cache for iCommands packages
         uses: actions/cache/restore@v4
         with:
           key: ${{ inputs.cache_key_icommands_packages }}
-          path: _build_icommands/*.deb
+          path: _build_icommands/*.rpm
           fail-on-cache-miss: 'true'
 
       - name: Install iRODS development packages
@@ -176,14 +176,14 @@ jobs:
 #       uses: actions/cache/restore@v4
 #       with:
 #         key: ${{ inputs.cache_key_irods_packages }}
-#         path: _build_irods/*.deb
+#         path: _build_irods/*.rpm
 #         fail-on-cache-miss: 'true'
 
 #     - name: Check cache for iCommands packages
 #       uses: actions/cache/restore@v4
 #       with:
 #         key: ${{ inputs.cache_key_icommands_packages }}
-#         path: _build_icommands/*.deb
+#         path: _build_icommands/*.rpm
 #         fail-on-cache-miss: 'true'
 
       - name: Run tests
@@ -196,7 +196,7 @@ jobs:
 
           # Move the icommands package into the same directory containing the server packages.
           # This is required by the testing environment.
-          mv build_artifacts/_build_icommands/*.deb build_artifacts/_build_irods
+          mv build_artifacts/_build_icommands/*.rpm build_artifacts/_build_irods
 
           cd irods_testing_environment
           . venv_testing_env/bin/activate
