@@ -7,6 +7,18 @@ on:
         description: The docker image and tag identifying the OS used to compile the plugin (e.g. debian:13).
         required: true
         type: string
+      cache_key_irods_packages_prefix:
+        description: The key which potentially identifies a cached build of the irods/irods source code.
+        required: true
+        type: string
+      cache_key_icommands_packages_prefix:
+        description: The key which potentially identifies a cached build of the irods/irods_client_icommands source code.
+        required: true
+        type: string
+      ccache_key:
+        description: The key which potentially identifies ccache state from a previous build.
+        required: true
+        type: string
       build_artifact_suffix:
         description: The name used to uniquely identify build output across workflow jobs (e.g. debian_13-main).
         required: true
@@ -21,14 +33,6 @@ on:
         type: string
       irods_testing_environment_project_db:
         description: The DB component of the project directory to test against. When joined with 'irods_testing_environment_project_os', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. postgres-16).
-        required: true
-        type: string
-      cache_key_irods_packages_prefix:
-        description: The key which potentially identifies a cached build of the irods/irods source code.
-        required: true
-        type: string
-      cache_key_icommands_packages_prefix:
-        description: The key which potentially identifies a cached build of the irods/irods_client_icommands source code.
         required: true
         type: string
 
