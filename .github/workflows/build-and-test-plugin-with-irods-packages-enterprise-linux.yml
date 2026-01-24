@@ -99,8 +99,8 @@ jobs:
           set -x
           dnf update -y
           dnf install -y \
-            irods-devel-${{ inputs.irods_package_version }} \
-            irods-runtime-${{ inputs.irods_package_version }}
+            ./_build_irods/irods-devel*.rpm \
+            ./_build_irods/irods-runtime*.rpm
 
       - name: Install iRODS python CI utilities
         run: |
