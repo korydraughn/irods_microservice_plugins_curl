@@ -103,6 +103,7 @@ jobs:
       - name: Install iRODS development packages
         run: |
           apt-get update -qq
+
           apt-get install -qq \
             ./_build_irods/irods-dev*.deb \
             ./_build_irods/irods-runtime*.deb
