@@ -16,12 +16,12 @@ on:
         description: Run tests against MySQL.
         required: false
         type: boolean
-        default: 'false'
+        default: false
       test_against_mariadb:
         description: Run tests against MariaDB.
         required: false
         type: boolean
-        default: 'false'
+        default: false
 
 defaults:
   run:
@@ -133,38 +133,32 @@ jobs:
       irods_testing_environment_project_os: ${{ matrix.irods_testing_environment_project_os }}
       irods_testing_environment_project_db: ${{ matrix.irods_testing_environment_project_db }}
 
-  mysql_and_mariadb:
-    strategy:
-      matrix:
-        include:
-          # MySQL
-          - docker_image: ubuntu:22.04
-            cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04-mysql
-            cache_key_icommands_packages_prefix: cache-icommands-ubuntu-22.04-mysql
-            ccache_key: ccache-irods-ubuntu-22.04-mysql
-            build_artifact_suffix: ubuntu_22-main-mysql
-            plugin_package_directory: Ubuntu_22
-            irods_testing_environment_project_os: ubuntu-22.04
-            irods_testing_environment_project_db: mysql-8.0
+  mysql:
+    needs: ubuntu
 
-          # MariaDB
-          - docker_image: ubuntu:22.04
-            cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04-mariadb
-            cache_key_icommands_packages_prefix: cache-icommands-ubuntu-22.04-mariadb
-            ccache_key: ccache-irods-ubuntu-22.04-mariadb
-            build_artifact_suffix: ubuntu_22-main-mariadb
-            plugin_package_directory: Ubuntu_22
-            irods_testing_environment_project_os: ubuntu-22.04
-            irods_testing_environment_project_db: mariadb-10.11
-
-    if: ${{ (inputs.test_against_mysql && startsWith(matrix.irods_testing_environment_project_db, 'mysql')) || (inputs.test_against_mariadb && startsWith(matrix.irods_testing_environment_project_db, 'mariadb')) }}
+    if: ${{ inputs.test_against_mysql }}
     uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@main
     with:
-      docker_image: ${{ matrix.docker_image }}
-      cache_key_irods_packages_prefix: ${{ matrix.cache_key_irods_packages_prefix }}
-      cache_key_icommands_packages_prefix: ${{ matrix.cache_key_icommands_packages_prefix }}
-      ccache_key: ${{ matrix.ccache_key }}
-      build_artifact_suffix: ${{ matrix.build_artifact_suffix }}
-      plugin_package_directory: ${{ matrix.plugin_package_directory }}
-      irods_testing_environment_project_os: ${{ matrix.irods_testing_environment_project_os }}
-      irods_testing_environment_project_db: ${{ matrix.irods_testing_environment_project_db }}
+      docker_image: ubuntu:22.04
+      cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
+      cache_key_icommands_packages_prefix: cache-icommands-ubuntu-22.04
+      ccache_key: ccache-irods-ubuntu-22.04
+      build_artifact_suffix: ubuntu_22-main
+      plugin_package_directory: Ubuntu_22
+      irods_testing_environment_project_os: ubuntu-22.04
+      irods_testing_environment_project_db: mysql-8.0
+
+  mariadb:
+    needs: ubuntu
+
+    if: ${{ inputs.test_against_mariadb }}
+    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@main
+    with:
+      docker_image: ubuntu:22.04
+      cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
+      cache_key_icommands_packages_prefix: cache-icommands-ubuntu-22.04
+      ccache_key: ccache-irods-ubuntu-22.04
+      build_artifact_suffix: ubuntu_22-main
+      plugin_package_directory: Ubuntu_22
+      irods_testing_environment_project_os: ubuntu-22.04
+      irods_testing_environment_project_db: mariadb-10.11
