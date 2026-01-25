@@ -8,6 +8,6 @@ defaults:
 
 jobs:
     clang-tidy:
-        uses: irods/irods_reusable_github_workflows/.github/workflows/linter-irods-clang-tidy.yml@main
+        uses: korydraughn/irods_reusable_github_workflows/.github/workflows/linter-irods-clang-tidy.yml@main
         with:
             install_irods_development_package: true
