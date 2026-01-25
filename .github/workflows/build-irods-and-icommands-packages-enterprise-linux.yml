@@ -4,30 +4,40 @@ on:
   workflow_call:
     inputs:
       docker_image:
+        description: The docker image and tag identifying the OS used to compile source code (e.g. rockylinux/rockylinux:10).
         required: true
         type: string
       cache_key_irods_packages_prefix:
+        description: The key which potentially identifies a cached build of the irods/irods source code.
         required: true
         type: string
       cache_key_icommands_packages_prefix:
+        description: The key which potentially identifies a cached build of the irods/irods_client_icommands source code.
         required: true
         type: string
       ccache_key:
+        description: The key which potentially identifies ccache state from a previous build.
         required: true
         type: string
       build_artifact_suffix:
+        description: The name used to uniquely identify build output across workflow jobs (e.g. rockylinux_10-main).
         required: true
         type: string
       plugin_package_directory:
+        description: The directory name which is expected to hold the plugin packages (e.g. 'Rocky linux_10'). Required by the irods_python_ci_utilities module.
         required: true
         type: string
       irods_testing_environment_project_os:
+        description: The OS component of the project directory to test against. When joined with 'irods_testing_environment_project_db', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. rockylinux-10).
         required: true
         type: string
       irods_testing_environment_project_db:
+        description: The DB component of the project directory to test against. When joined with 'irods_testing_environment_project_os', it must match a directory under the projects directory within the iRODS Testing Environment repository (e.g. postgres-16).
         required: true
         type: string
         default: postgres-16
+
+    # Make various pieces of information available to other workflows.
     outputs:
       docker_image:
         value: ${{ jobs.build_irods_and_icommands.outputs.docker_image }}
@@ -59,6 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ${{ inputs.docker_image }}
 
+    # Make various pieces of information available to other jobs.
     outputs:
       docker_image: ${{ inputs.docker_image }}
       build_artifact_suffix: ${{ inputs.build_artifact_suffix }}

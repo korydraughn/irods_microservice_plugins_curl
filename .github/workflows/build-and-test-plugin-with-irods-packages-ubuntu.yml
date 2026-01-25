@@ -46,7 +46,7 @@ defaults:
 
 jobs:
   build_plugin:
-    name: Build - ${{ inputs.docker_image }}
+    name: Build plugin - ${{ inputs.docker_image }}
 
     runs-on: ubuntu-latest
     container: ${{ inputs.docker_image }}
@@ -57,7 +57,6 @@ jobs:
 
       - name: Install prerequisite packages
         run: |
-          set -x
           apt-get update -qq
           apt-get install -qq \
             build-essential \
@@ -73,7 +72,6 @@ jobs:
 
       - name: Set up iRODS externals package repository
         run: |
-          set -x
           mkdir -p /etc/apt/keyrings
           wget -qO - https://unstable.irods.org/irods-unstable-signing-key.asc | \
             gpg \
@@ -104,7 +102,6 @@ jobs:
 
       - name: Install iRODS development packages
         run: |
-          set -x
           apt-get update -qq
           apt-get install -qq \
             ./_build_irods/irods-dev*.deb \
@@ -112,7 +109,6 @@ jobs:
 
       - name: Install iRODS python CI utilities
         run: |
-          set -x
           if [[ "${{ inputs.docker_image }}" == "ubuntu:22.04" ]]; then
             python3 -m pip install git+https://github.com/irods/irods_python_ci_utilities.git@main
           else
@@ -122,14 +118,11 @@ jobs:
 
       - name: Build and package
         run: |
-          set -x
           mkdir _build
           python3 irods_consortium_continuous_integration_build_hook.py --build_directory _build
 
       - name: List contents of build directory
-        run: |
-          set -x
-          ls -l _build
+        run: ls -l _build
 
       # The server and icommands packages were built and cached while inside of a docker container.
       # We cannot use actions/cache to get the server and icommands packages in the next job because
@@ -149,7 +142,7 @@ jobs:
   run_tests:
     needs: build_plugin
 
-    name: Test - ${{ inputs.irods_testing_environment_project_os }}, ${{ inputs.irods_testing_environment_project_db }}
+    name: Test plugin - ${{ inputs.irods_testing_environment_project_os }}, ${{ inputs.irods_testing_environment_project_db }}
 
     runs-on: ubuntu-latest
 
@@ -173,7 +166,6 @@ jobs:
 
       - name: Set up iRODS testing environment
         run: |
-          set -x
           git clone -b main --depth 1 --single-branch https://github.com/irods/irods_testing_environment
           cd irods_testing_environment
           python3 -m venv venv_testing_env
@@ -183,26 +175,8 @@ jobs:
           pip install docker'<7' requests==2.26.0
           pip freeze
 
-      # XXX Cannot use this since the "key" is tied to the GHA runner OS. 
-      # i.e. We build packages in a container, but run tests from a VM.
-#     - name: Check cache for iRODS packages
-#       uses: actions/cache/restore@v4
-#       with:
-#         key: ${{ inputs.cache_key_irods_packages }}
-#         path: _build_irods/*.deb
-#         fail-on-cache-miss: 'true'
-
-#     - name: Check cache for iCommands packages
-#       uses: actions/cache/restore@v4
-#       with:
-#         key: ${{ inputs.cache_key_icommands_packages }}
-#         path: _build_icommands/*.deb
-#         fail-on-cache-miss: 'true'
-
       - name: Run tests
         run: |
-          set -x
-
           # Create a symlink to the directory containing the recently built plugin packages.
           # This is required by the irods_python_irods_ci_utilities module.
           ln -s build_artifacts/_build "${{ inputs.plugin_package_directory }}"
@@ -220,4 +194,4 @@ jobs:
             --irods-package-directory ../build_artifacts/_build_irods \
             --plugin-package-directory .. \
             --discard-logs \
-            -vv
+            -v
