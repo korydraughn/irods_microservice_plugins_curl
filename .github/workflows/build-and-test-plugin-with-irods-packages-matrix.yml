@@ -52,7 +52,7 @@ jobs:
             irods_testing_environment_project_os: debian-13
             irods_testing_environment_project_db: postgres-16
 
-    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-debian.yml@main
+    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-debian.yml@26.m
     with:
       docker_image: ${{ matrix.docker_image }}
       cache_key_irods_packages_prefix: ${{ matrix.cache_key_irods_packages_prefix }}
@@ -87,7 +87,7 @@ jobs:
             irods_testing_environment_project_os: rockylinux-10
             irods_testing_environment_project_db: postgres-16
 
-    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-enterprise-linux.yml@main
+    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-enterprise-linux.yml@26.m
     with:
       docker_image: ${{ matrix.docker_image }}
       cache_key_irods_packages_prefix: ${{ matrix.cache_key_irods_packages_prefix }}
@@ -122,7 +122,7 @@ jobs:
             irods_testing_environment_project_os: ubuntu-24.04
             irods_testing_environment_project_db: postgres-16
 
-    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@main
+    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@26.m
     with:
       docker_image: ${{ matrix.docker_image }}
       cache_key_irods_packages_prefix: ${{ matrix.cache_key_irods_packages_prefix }}
@@ -137,7 +137,7 @@ jobs:
     needs: ubuntu
 
     if: ${{ inputs.test_against_mysql }}
-    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@main
+    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@26.m
     with:
       docker_image: ubuntu:22.04
       cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
@@ -152,7 +152,7 @@ jobs:
     needs: ubuntu
 
     if: ${{ inputs.test_against_mariadb }}
-    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@main
+    uses: korydraughn/irods_reusable_github_workflows/.github/workflows/build-and-test-plugin-with-irods-packages-pipeline-ubuntu.yml@26.m
     with:
       docker_image: ubuntu:22.04
       cache_key_irods_packages_prefix: cache-irods-ubuntu-22.04
